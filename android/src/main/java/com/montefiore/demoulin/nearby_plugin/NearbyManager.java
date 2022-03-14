@@ -19,6 +19,7 @@ import com.google.android.gms.nearby.connection.PayloadCallback;
 import com.google.android.gms.nearby.connection.PayloadTransferUpdate;
 import com.google.android.gms.nearby.connection.Strategy;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class NearbyManager {
     private final Context context;
     private final EventChannel.EventSink eventSink;
 
+    private final List<String> connectedEndpoints = new ArrayList<>();
     private String name;
 
     NearbyManager(Context context, EventChannel.EventSink eventSink) {
@@ -72,7 +74,7 @@ public class NearbyManager {
                         (Void unused) -> {
                             Log.i(TAG, "Start discovery");
                             HashMap<String, Object> mapInfoValue = new HashMap<>();
-                            mapInfoValue.put("type", MessageType.onDiscoveryStarted);
+                            mapInfoValue.put("type", MessageType.onDiscoveryStarted.toString());
                             eventSink.success(mapInfoValue);
                         })
                 .addOnFailureListener(
@@ -85,7 +87,7 @@ public class NearbyManager {
         Log.i(TAG, "Stop discovery");
         Nearby.getConnectionsClient(context).stopDiscovery();
         HashMap<String, Object> mapInfoValue = new HashMap<>();
-        mapInfoValue.put("type", MessageType.onDiscoveryEnded);
+        mapInfoValue.put("type", MessageType.onDiscoveryEnded.toString());
         eventSink.success(mapInfoValue);
     }
 
@@ -96,16 +98,16 @@ public class NearbyManager {
                         (Void unused) -> {
                             Log.i(TAG, "Connection request to " + endpointId);
                             HashMap<String, Object> mapInfoValue = new HashMap<>();
-                            mapInfoValue.put("type", MessageType.onConnectionRequested);
-                            mapInfoValue.put("endpoint", endpointId);
+                            mapInfoValue.put("type", MessageType.onConnectionRequested.toString());
+                            mapInfoValue.put("endpointId", endpointId);
                             eventSink.success(mapInfoValue);
                         })
                 .addOnFailureListener(
                         (Exception e) -> {
                             Log.i(TAG, "Failed to request connection: " + e.getMessage());
                             HashMap<String, Object> mapInfoValue = new HashMap<>();
-                            mapInfoValue.put("type", MessageType.onConnectionRequestFailed);
-                            mapInfoValue.put("endpoint", endpointId);
+                            mapInfoValue.put("type", MessageType.onConnectionRequestFailed.toString());
+                            mapInfoValue.put("endpointId", endpointId);
                             eventSink.success(mapInfoValue);
                         });
     }
@@ -115,14 +117,9 @@ public class NearbyManager {
         Nearby.getConnectionsClient(context).stopAllEndpoints();
     }
 
-    public void sendMessage(@NonNull String endpointId, @NonNull byte[] payload) {
-        Log.i(TAG, "Sending message to " + endpointId);
-        Nearby.getConnectionsClient(context).sendPayload(endpointId, Payload.fromBytes(payload));
-    }
-
-    public void broadcast(@NonNull List<String> endpointIds, @NonNull byte[] payload) {
+    public void broadcast(@NonNull byte[] payload) {
         Log.i(TAG, "Broadcast message");
-        Nearby.getConnectionsClient(context).sendPayload(endpointIds, Payload.fromBytes(payload));
+        Nearby.getConnectionsClient(context).sendPayload(connectedEndpoints, Payload.fromBytes(payload));
     }
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback =
@@ -131,8 +128,9 @@ public class NearbyManager {
                 public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
                     Log.i(TAG, "Endpoint found: " + endpointId);
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
-                    mapInfoValue.put("type", MessageType.onEndpointDiscovered);
-                    mapInfoValue.put("endpoint", endpointId);
+                    mapInfoValue.put("type", MessageType.onEndpointDiscovered.toString());
+                    mapInfoValue.put("endpoint", info.getEndpointName());
+                    mapInfoValue.put("endpointId", endpointId);
                     eventSink.success(mapInfoValue);
                 }
 
@@ -140,8 +138,8 @@ public class NearbyManager {
                 public void onEndpointLost(@NonNull String endpointId) {
                     Log.i(TAG, "Endpoint lost: " + endpointId);
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
-                    mapInfoValue.put("type", MessageType.onEndpointLost);
-                    mapInfoValue.put("endpoint", endpointId);
+                    mapInfoValue.put("type", MessageType.onEndpointLost.toString());
+                    mapInfoValue.put("endpointId", endpointId);
                     eventSink.success(mapInfoValue);
                 }
             };
@@ -160,20 +158,23 @@ public class NearbyManager {
                     switch (result.getStatus().getStatusCode()) {
                         case ConnectionsStatusCodes.STATUS_OK:
                             Log.i(TAG, "Connected successful with: " + endpointId);
-                            mapInfoValue.put("type", MessageType.onConnectionAccepted);
-                            mapInfoValue.put("endpoint", endpointId);
+                            // Save the endpoint in the list of connected devices
+                            connectedEndpoints.add(endpointId);
+
+                            mapInfoValue.put("type", MessageType.onConnectionAccepted.toString());
+                            mapInfoValue.put("endpointId", endpointId);
                             eventSink.success(mapInfoValue);
                             break;
                         case ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED:
                             Log.i(TAG, "Connection rejected with: " + endpointId);
-                            mapInfoValue.put("type", MessageType.onConnectionRejected);
-                            mapInfoValue.put("endpoint", endpointId);
+                            mapInfoValue.put("type", MessageType.onConnectionRejected.toString());
+                            mapInfoValue.put("endpointId", endpointId);
                             eventSink.success(mapInfoValue);
                             break;
                         case ConnectionsStatusCodes.STATUS_ERROR:
                             Log.i(TAG, "Connection broke with: " + endpointId);
-                            mapInfoValue.put("type", MessageType.onConnectionEnded);
-                            mapInfoValue.put("endpoint", endpointId);
+                            mapInfoValue.put("type", MessageType.onConnectionEnded.toString());
+                            mapInfoValue.put("endpointId", endpointId);
                             eventSink.success(mapInfoValue);
                             break;
                         default:
@@ -185,8 +186,11 @@ public class NearbyManager {
                 public void onDisconnected(@NonNull String endpointId) {
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
                     Log.i(TAG, "Connection ended with: " + endpointId);
-                    mapInfoValue.put("type", MessageType.onConnectionEnded);
-                    mapInfoValue.put("endpoint", endpointId);
+                    // Remove the endpoint from the list of connected devices
+                    connectedEndpoints.remove(endpointId);
+
+                    mapInfoValue.put("type", MessageType.onConnectionEnded.toString());
+                    mapInfoValue.put("endpointId", endpointId);
                     eventSink.success(mapInfoValue);
                 }
             };
@@ -196,9 +200,9 @@ public class NearbyManager {
                 @Override
                 public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
-                    mapInfoValue.put("type", MessageType.onPayloadReceived);
-                    mapInfoValue.put("endpoint", endpointId);
-                    mapInfoValue.put("id", payload.getId());
+                    mapInfoValue.put("type", MessageType.onPayloadReceived.toString());
+                    mapInfoValue.put("endpointId", endpointId);
+                    mapInfoValue.put("payloadId", payload.getId());
                     mapInfoValue.put("payload", payload.asBytes());
                     eventSink.success(mapInfoValue);
                 }
@@ -206,9 +210,9 @@ public class NearbyManager {
                 @Override
                 public void onPayloadTransferUpdate(@NonNull String endpointId, @NonNull PayloadTransferUpdate update) {
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
-                    mapInfoValue.put("type", MessageType.onPayloadTransferred);
-                    mapInfoValue.put("endpoint", endpointId);
-                    mapInfoValue.put("id", update.getPayloadId());
+                    mapInfoValue.put("type", MessageType.onPayloadTransferred.toString());
+                    mapInfoValue.put("endpointId", endpointId);
+                    mapInfoValue.put("payloadId", update.getPayloadId());
                     mapInfoValue.put("payload", update.getBytesTransferred());
                     eventSink.success(mapInfoValue);
                 }

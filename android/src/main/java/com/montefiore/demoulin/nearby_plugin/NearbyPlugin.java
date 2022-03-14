@@ -1,8 +1,8 @@
 package com.montefiore.demoulin.nearby_plugin;
 
-import androidx.annotation.NonNull;
+import android.content.Context;
 
-import java.util.List;
+import androidx.annotation.NonNull;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -21,11 +21,14 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private EventChannel eventChannel;
   private EventChannel.EventSink eventSink;
+  private Context context;
 
   private NearbyManager nearbyManager;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+    this.context = flutterPluginBinding.getApplicationContext();
+
     BinaryMessenger messenger = flutterPluginBinding.getBinaryMessenger();
 
     channel = new MethodChannel(messenger, METHOD_NAME);
@@ -44,18 +47,19 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
         eventChannel = null;
       }
     });
-
-    nearbyManager = new NearbyManager(flutterPluginBinding.getApplicationContext(), eventSink);
   }
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     switch (call.method) {
       case "startAdvertising":
+        nearbyManager = new NearbyManager(context, eventSink);
         final String name = call.arguments();
         nearbyManager.startAdvertising(name);
+        break;
       case "stopAdvertising":
         nearbyManager.stopAdvertising();
+        break;
       case "startDiscovery":
         nearbyManager.startDiscovery();
         break;
@@ -69,12 +73,9 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
       case "disconnectAll":
         nearbyManager.disconnectAll();
         break;
-      case "sendMessage":
-        final Object[] data = call.arguments();
-        nearbyManager.sendMessage((String) data[0], (byte[]) data[1]);
       case "broadcast":
-        final Object[] msg = call.arguments();
-        nearbyManager.broadcast((List<String>) msg[0], (byte[]) msg[1]);
+        nearbyManager.broadcast(call.arguments().toString().getBytes());
+        break;
       default:
         result.notImplemented();
         break;

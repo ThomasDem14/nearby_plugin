@@ -63,8 +63,8 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
         nearbyManager.stopDiscovery();
         break;
       case "connect":
-        final String[] args = call.arguments();
-        nearbyManager.connect(args[0], args[1]);
+        final String endpoint = call.arguments();
+        nearbyManager.connect(endpoint);
         break;
       case "disconnectAll":
         nearbyManager.disconnectAll();

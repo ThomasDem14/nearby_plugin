@@ -24,8 +24,8 @@ class TransferManager {
 
   Stream get eventStream => _controller.stream;
 
-  void enable() {
-    _methodCh.invokeMethod('startAdvertising');
+  void enable(String name) {
+    _methodCh.invokeMethod('startAdvertising', name);
   }
 
   void disable() {
@@ -43,8 +43,8 @@ class TransferManager {
     });
   }
 
-  void connect(String endpoint, String name) {
-    _methodCh.invokeMethod('connect', [endpoint, name]);
+  void connect(String endpoint) {
+    _methodCh.invokeMethod('connect', endpoint);
   }
 
   void disconnectAll() {

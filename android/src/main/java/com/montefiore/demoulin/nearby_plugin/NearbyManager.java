@@ -33,12 +33,16 @@ public class NearbyManager {
     private final Context context;
     private final EventChannel.EventSink eventSink;
 
+    private String name;
+
     NearbyManager(Context context, EventChannel.EventSink eventSink) {
         this.context = context;
         this.eventSink = eventSink;
     }
 
     public void startAdvertising(@NonNull String name) {
+        this.name = name;
+
         AdvertisingOptions advertisingOptions =
                 new AdvertisingOptions.Builder().setStrategy(STRATEGY).build();
         Nearby.getConnectionsClient(context)
@@ -85,9 +89,9 @@ public class NearbyManager {
         eventSink.success(mapInfoValue);
     }
 
-    public void connect(@NonNull String endpointId, @NonNull String name) {
+    public void connect(@NonNull String endpointId) {
         Nearby.getConnectionsClient(context)
-                .requestConnection(name, endpointId, connectionLifecycleCallback)
+                .requestConnection(this.name, endpointId, connectionLifecycleCallback)
                 .addOnSuccessListener(
                         (Void unused) -> {
                             Log.i(TAG, "Connection request to " + endpointId);

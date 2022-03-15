@@ -117,9 +117,10 @@ public class NearbyManager {
         Nearby.getConnectionsClient(context).stopAllEndpoints();
     }
 
-    public void broadcast(@NonNull byte[] payload) {
-        Log.i(TAG, "Broadcast message");
-        Nearby.getConnectionsClient(context).sendPayload(connectedEndpoints, Payload.fromBytes(payload));
+    public void broadcast(@NonNull String payload) {
+        Log.i(TAG, "Broadcast message: " + connectedEndpoints.size() + " " + payload.getBytes().length);
+        Nearby.getConnectionsClient(context)
+                .sendPayload(connectedEndpoints, Payload.fromBytes(payload.getBytes()));
     }
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback =
@@ -203,7 +204,7 @@ public class NearbyManager {
                     mapInfoValue.put("type", MessageType.onPayloadReceived.toString());
                     mapInfoValue.put("endpointId", endpointId);
                     mapInfoValue.put("payloadId", payload.getId());
-                    mapInfoValue.put("payload", payload.asBytes());
+                    mapInfoValue.put("payload", new String(payload.asBytes()));
                     eventSink.success(mapInfoValue);
                 }
 
@@ -213,7 +214,7 @@ public class NearbyManager {
                     mapInfoValue.put("type", MessageType.onPayloadTransferred.toString());
                     mapInfoValue.put("endpointId", endpointId);
                     mapInfoValue.put("payloadId", update.getPayloadId());
-                    mapInfoValue.put("payload", update.getBytesTransferred());
+                    mapInfoValue.put("payloadStatus", update.getStatus());
                     eventSink.success(mapInfoValue);
                 }
             };

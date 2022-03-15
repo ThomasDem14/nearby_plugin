@@ -74,7 +74,7 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
         nearbyManager.disconnectAll();
         break;
       case "broadcast":
-        nearbyManager.broadcast(call.arguments().toString().getBytes());
+        nearbyManager.broadcast(call.arguments().toString());
         break;
       default:
         result.notImplemented();

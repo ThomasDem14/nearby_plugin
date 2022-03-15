@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:nearby_plugin/nearby_plugin.dart';
 
@@ -16,18 +16,21 @@ class NearbyMessage {
   String? payloadId;
 
   /// Payload of the message.
-  Uint8List? payload;
+  String? payload;
 
-  NearbyMessage(
-      this.type, this.endpointId, this.endpoint, this.payloadId, this.payload);
+  int? payloadStatus;
+
+  NearbyMessage(this.type, this.endpointId, this.endpoint, this.payloadId,
+      this.payload, this.payloadStatus);
 
   factory NearbyMessage.fromMap(Map<String, dynamic> from) {
     return NearbyMessage(
       getNearbyMessageTypeFromString(from['type'])!,
-      from['endpointId'],
-      from['endpoint'],
-      from['payloadId'],
-      from['payload'],
+      from['endpointId'].toString(),
+      from['endpoint'].toString(),
+      from['payloadId'].toString(),
+      from['payload'].toString(),
+      from['payloadStatus'],
     );
   }
 }

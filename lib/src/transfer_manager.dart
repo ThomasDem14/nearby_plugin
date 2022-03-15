@@ -46,7 +46,7 @@ class TransferManager {
   }
 
   /// Send data to all connected devices.
-  void broadcast(Uint8List data) {
+  void broadcast(String data) {
     _methodCh.invokeMethod('broadcast', data);
   }
 

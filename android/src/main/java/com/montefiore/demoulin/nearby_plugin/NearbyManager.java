@@ -114,13 +114,25 @@ public class NearbyManager {
 
     public void disconnectAll() {
         Log.i(TAG, "Disconnect all");
-        Nearby.getConnectionsClient(context).stopAllEndpoints();
+        for(String endpoint : connectedEndpoints) {
+            Nearby.getConnectionsClient(context).disconnectFromEndpoint(endpoint);
+        }
     }
 
     public void broadcast(@NonNull String payload) {
-        Log.i(TAG, "Broadcast message: " + connectedEndpoints.size() + " " + payload.getBytes().length);
+        Log.i(TAG, "Broadcast message");
         Nearby.getConnectionsClient(context)
                 .sendPayload(connectedEndpoints, Payload.fromBytes(payload.getBytes()));
+    }
+
+    public void broadcastExcept(@NonNull String payload, @NonNull List<String> exceptList) {
+        Log.i(TAG, "Broadcast message except " + exceptList.size());
+        for (String endpoint : connectedEndpoints) {
+            if (!exceptList.contains(endpoint)) {
+                Nearby.getConnectionsClient(context)
+                        .sendPayload(endpoint, Payload.fromBytes(payload.getBytes()));
+            }
+        }
     }
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback =

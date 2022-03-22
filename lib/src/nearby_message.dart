@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:nearby_plugin/nearby_plugin.dart';
 
 class NearbyMessage {

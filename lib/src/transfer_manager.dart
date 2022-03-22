@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:nearby_plugin/src/nearby_message.dart';
@@ -48,6 +47,14 @@ class TransferManager {
   /// Send data to all connected devices.
   void broadcast(String data) {
     _methodCh.invokeMethod('broadcast', data);
+  }
+
+  /// Send data to all connected devices except the ones specified in the list.
+  void broadcastExcept(String data, List<String> endpoints) {
+    _methodCh.invokeMethod('broadcast', <String, dynamic>{
+      'data': data,
+      'endpoints': endpoints,
+    });
   }
 
   /// Start a discovery process for a certain amount of time (in ms).

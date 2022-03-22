@@ -4,6 +4,8 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
+import java.util.Objects;
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
@@ -75,6 +77,10 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "broadcast":
         nearbyManager.broadcast(call.arguments().toString());
+        break;
+      case "broadcastExcept":
+        nearbyManager.broadcastExcept(Objects.requireNonNull(call.argument("data")),
+                Objects.requireNonNull(call.argument("endpoints")));
         break;
       default:
         result.notImplemented();

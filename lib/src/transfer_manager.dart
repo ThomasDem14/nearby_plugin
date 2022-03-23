@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:nearby_plugin/src/nearby_message.dart';
+import 'package:nearby_plugin/src/permission_manager.dart';
 
 /// Defines the method channel and invoke the Java methods.
 class TransferManager {
@@ -28,8 +29,12 @@ class TransferManager {
   Stream<NearbyMessage> get eventStream => _controller.stream;
 
   /// Enable the plugin.
-  void enable(String name) {
-    _methodCh.invokeMethod('startAdvertising', _uniqueName(name));
+  Future<bool> enable(String name) async {
+    var granted = await PermissionManager.requestPermissions();
+    if (granted) {
+      _methodCh.invokeMethod('startAdvertising', _uniqueName(name));
+    }
+    return granted;
   }
 
   /// Transfrorm a name into a unique one by adding 4 random digits.

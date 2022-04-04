@@ -21,6 +21,7 @@ import com.google.android.gms.nearby.connection.Strategy;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import io.flutter.plugin.common.EventChannel;
@@ -34,7 +35,18 @@ public class NearbyManager {
     private final Context context;
     private final EventChannel.EventSink eventSink;
 
-    private final List<String> connectedEndpoints = new ArrayList<>();
+    private static class Endpoint {
+        String id;
+        String name;
+
+        Endpoint(String id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+    }
+
+    private final List<Endpoint> initiatedEndpoints = new ArrayList<>();
+    private final List<Endpoint> connectedEndpoints = new ArrayList<>();
     private String name;
 
     NearbyManager(Context context, EventChannel.EventSink eventSink) {
@@ -114,23 +126,29 @@ public class NearbyManager {
 
     public void disconnectAll() {
         Log.i(TAG, "Disconnect all");
-        for(String endpoint : connectedEndpoints) {
-            Nearby.getConnectionsClient(context).disconnectFromEndpoint(endpoint);
+        for(Endpoint endpoint : connectedEndpoints) {
+            Nearby.getConnectionsClient(context).disconnectFromEndpoint(endpoint.id);
         }
     }
 
     public void broadcast(@NonNull String payload) {
         Log.i(TAG, "Broadcast message");
+
+        List<String> list = new ArrayList<>();
+        for (Endpoint e : connectedEndpoints) {
+            list.add(e.id);
+        }
+
         Nearby.getConnectionsClient(context)
-                .sendPayload(connectedEndpoints, Payload.fromBytes(payload.getBytes()));
+                .sendPayload(list, Payload.fromBytes(payload.getBytes()));
     }
 
     public void broadcastExcept(@NonNull String payload, @NonNull List<String> exceptList) {
         Log.i(TAG, "Broadcast message except " + exceptList.size());
-        for (String endpoint : connectedEndpoints) {
-            if (!exceptList.contains(endpoint)) {
+        for (Endpoint endpoint : connectedEndpoints) {
+            if (!exceptList.contains(endpoint.id)) {
                 Nearby.getConnectionsClient(context)
-                        .sendPayload(endpoint, Payload.fromBytes(payload.getBytes()));
+                        .sendPayload(endpoint.id, Payload.fromBytes(payload.getBytes()));
             }
         }
     }
@@ -163,35 +181,56 @@ public class NearbyManager {
                 public void onConnectionInitiated(@NonNull String endpointId, @NonNull ConnectionInfo connectionInfo) {
                     // Automatically accept the connection on both sides.
                     Nearby.getConnectionsClient(context).acceptConnection(endpointId, payloadCallback);
+                    // Save the endpoint id and name in the initiated list
+                    initiatedEndpoints.add(new Endpoint(endpointId, connectionInfo.getEndpointName()));
                 }
 
                 @Override
-                public void onConnectionResult(@NonNull String endpointId, ConnectionResolution result) {
+                public void onConnectionResult(@NonNull String endpointId, @NonNull ConnectionResolution result) {
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
+
+                    // Get the initiated endpoint associated to the given endpointId
+                    Endpoint endpoint = null;
+                    for (Endpoint e : initiatedEndpoints) {
+                        if (e.id.equals(endpointId)) {
+                            endpoint = e;
+                        }
+                    }
+                    if (endpoint == null) {
+                        endpoint = new Endpoint(endpointId, null);
+                    }
+
                     switch (result.getStatus().getStatusCode()) {
                         case ConnectionsStatusCodes.STATUS_OK:
-                            Log.i(TAG, "Connected successful with: " + endpointId);
+                            Log.i(TAG, "Connection successful with: " + endpoint.id);
                             // Save the endpoint in the list of connected devices
-                            connectedEndpoints.add(endpointId);
-
+                            connectedEndpoints.add(endpoint);
+                            // Notify
                             mapInfoValue.put("type", MessageType.onConnectionAccepted.toString());
-                            mapInfoValue.put("endpointId", endpointId);
+                            mapInfoValue.put("endpointId", endpoint.id);
+                            mapInfoValue.put("endpoint", endpoint.name);
                             eventSink.success(mapInfoValue);
                             break;
                         case ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED:
-                            Log.i(TAG, "Connection rejected with: " + endpointId);
+                        case ConnectionsStatusCodes.STATUS_ERROR:
+                            Log.i(TAG, "Connection rejected/broke with: " + endpoint.id);
+                            // Notify
                             mapInfoValue.put("type", MessageType.onConnectionRejected.toString());
                             mapInfoValue.put("endpointId", endpointId);
-                            eventSink.success(mapInfoValue);
-                            break;
-                        case ConnectionsStatusCodes.STATUS_ERROR:
-                            Log.i(TAG, "Connection broke with: " + endpointId);
-                            mapInfoValue.put("type", MessageType.onConnectionEnded.toString());
-                            mapInfoValue.put("endpointId", endpointId);
+                            mapInfoValue.put("endpoint", endpoint.name);
                             eventSink.success(mapInfoValue);
                             break;
                         default:
                             // Unknown status code
+                    }
+
+                    // Remove the endpoint from the list of initiated devices
+                    Iterator<Endpoint> iterator = initiatedEndpoints.iterator();
+                    while (iterator.hasNext()) {
+                        Endpoint e = iterator.next();
+                        if (e.id.equals(endpointId)) {
+                            iterator.remove();
+                        }
                     }
                 }
 
@@ -200,7 +239,13 @@ public class NearbyManager {
                     HashMap<String, Object> mapInfoValue = new HashMap<>();
                     Log.i(TAG, "Connection ended with: " + endpointId);
                     // Remove the endpoint from the list of connected devices
-                    connectedEndpoints.remove(endpointId);
+                    Iterator<Endpoint> iterator = connectedEndpoints.iterator();
+                    while (iterator.hasNext()) {
+                        Endpoint e = iterator.next();
+                        if (e.id.equals(endpointId)) {
+                            iterator.remove();
+                        }
+                    }
 
                     mapInfoValue.put("type", MessageType.onConnectionEnded.toString());
                     mapInfoValue.put("endpointId", endpointId);

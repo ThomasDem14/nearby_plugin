@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:nearby_plugin/src/nearby_message.dart';
@@ -32,16 +31,9 @@ class TransferManager {
   Future<bool> enable(String name) async {
     var granted = await PermissionManager.requestPermissions();
     if (granted) {
-      _methodCh.invokeMethod('startAdvertising', _uniqueName(name));
+      _methodCh.invokeMethod('startAdvertising', name);
     }
     return granted;
-  }
-
-  /// Transfrorm a name into a unique one by adding 4 random digits.
-  String _uniqueName(String name) {
-    var rng = Random();
-    var code = rng.nextInt(9000) + 1000;
-    return name + "#" + code.toString();
   }
 
   /// Disable the plugin.

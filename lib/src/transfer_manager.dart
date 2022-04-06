@@ -48,7 +48,7 @@ class TransferManager {
 
   /// Send data to all connected devices except the ones specified in the list.
   void broadcastExcept(String data, List<String> endpoints) {
-    _methodCh.invokeMethod('broadcast', <String, dynamic>{
+    _methodCh.invokeMethod('broadcastExcept', <String, dynamic>{
       'data': data,
       'endpoints': endpoints,
     });

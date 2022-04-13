@@ -77,7 +77,7 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "sendPayload":
         nearbyManager.sendPayload(Objects.requireNonNull(call.argument("data")),
-                Objects.requireNonNull(call.argument("endpoint")));
+                Objects.requireNonNull(call.argument("destination")));
         break;
       case "broadcast":
         nearbyManager.broadcast(call.arguments().toString());

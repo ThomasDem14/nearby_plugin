@@ -41,6 +41,14 @@ class TransferManager {
     _methodCh.invokeMethod('stopAdvertising');
   }
 
+  /// Send data to a destination.
+  void sendPayload(String data, String destination) {
+    _methodCh.invokeMethod('sendPayload', <String, dynamic>{
+      'data': data,
+      'destination': destination,
+    });
+  }
+
   /// Send data to all connected devices.
   void broadcast(String data) {
     _methodCh.invokeMethod('broadcast', data);

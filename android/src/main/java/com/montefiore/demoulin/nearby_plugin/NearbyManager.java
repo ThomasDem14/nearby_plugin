@@ -131,6 +131,13 @@ public class NearbyManager {
         }
     }
 
+    public void sendPayload(@NonNull String payload, @NonNull String destination) {
+        Log.i(TAG, "Send message to " + destination);
+        
+        Nearby.getConnectionsClient(context)
+                .sendPayload(destination, Payload.fromBytes(payload.getBytes()));
+    }
+
     public void broadcast(@NonNull String payload) {
         Log.i(TAG, "Broadcast message");
 

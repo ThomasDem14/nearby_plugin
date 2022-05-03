@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:nearby_plugin/src/nearby_message.dart';
+import 'package:nearby_plugin/src/nearby_strategy.dart';
 import 'package:nearby_plugin/src/permission_manager.dart';
 
 /// Defines the method channel and invoke the Java methods.
@@ -14,8 +15,9 @@ class TransferManager {
   static const EventChannel _eventCh = EventChannel(_eventName);
 
   late StreamController<NearbyMessage> _controller;
+  late NearbyStrategy strategy;
 
-  TransferManager() {
+  TransferManager(this.strategy) {
     _controller = StreamController<NearbyMessage>.broadcast();
 
     _eventCh.receiveBroadcastStream().listen((event) {
@@ -31,7 +33,10 @@ class TransferManager {
   Future<bool> enable(String name) async {
     var granted = await PermissionManager.requestPermissions();
     if (granted) {
-      _methodCh.invokeMethod('startAdvertising', name);
+      _methodCh.invokeMethod('startAdvertising', <String, dynamic>{
+        'name': name,
+        'strategy': strategy.index,
+      });
     }
     return granted;
   }

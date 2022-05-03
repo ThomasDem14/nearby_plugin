@@ -29,7 +29,6 @@ import io.flutter.plugin.common.EventChannel;
 /// Uses the Nearby API functions
 public class NearbyManager {
     private final String TAG = "[NearbyManager]";
-    private final Strategy STRATEGY = Strategy.P2P_CLUSTER;
     private final String SERVICE_ID = "com.montefiore.demoulin.nearby_plugin";
 
     private final Context context;
@@ -47,18 +46,21 @@ public class NearbyManager {
 
     private final List<Endpoint> initiatedEndpoints = new ArrayList<>();
     private final List<Endpoint> connectedEndpoints = new ArrayList<>();
+
     private String name;
+    private Strategy strategy;
 
     NearbyManager(Context context, EventChannel.EventSink eventSink) {
         this.context = context;
         this.eventSink = eventSink;
     }
 
-    public void startAdvertising(@NonNull String name) {
+    public void startAdvertising(@NonNull String name, @NonNull Strategy strategy) {
         this.name = name;
+        this.strategy = strategy;
 
         AdvertisingOptions advertisingOptions =
-                new AdvertisingOptions.Builder().setStrategy(STRATEGY).build();
+                new AdvertisingOptions.Builder().setStrategy(strategy).build();
         Nearby.getConnectionsClient(context)
                 .startAdvertising(
                         name, SERVICE_ID, connectionLifecycleCallback, advertisingOptions)
@@ -79,7 +81,7 @@ public class NearbyManager {
 
     public void startDiscovery() {
         DiscoveryOptions discoveryOptions =
-                new DiscoveryOptions.Builder().setStrategy(STRATEGY).build();
+                new DiscoveryOptions.Builder().setStrategy(this.strategy).build();
         Nearby.getConnectionsClient(context)
                 .startDiscovery(SERVICE_ID, endpointDiscoveryCallback, discoveryOptions)
                 .addOnSuccessListener(

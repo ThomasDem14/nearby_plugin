@@ -4,6 +4,8 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.gms.nearby.connection.Strategy;
+
 import java.util.Objects;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -56,8 +58,17 @@ public class NearbyPlugin implements FlutterPlugin, MethodCallHandler {
     switch (call.method) {
       case "startAdvertising":
         nearbyManager = new NearbyManager(context, eventSink);
-        final String name = call.arguments();
-        nearbyManager.startAdvertising(name);
+        final String name = Objects.requireNonNull(call.argument("name"));
+        final int index = Objects.requireNonNull(call.argument("strategy"));
+        Strategy strategy;
+        if (index == 0) {
+          strategy = Strategy.P2P_CLUSTER;
+        } else if (index == 1) {
+          strategy = Strategy.P2P_STAR;
+        } else {
+          strategy = Strategy.P2P_POINT_TO_POINT;
+        }
+        nearbyManager.startAdvertising(name, strategy);
         break;
       case "stopAdvertising":
         nearbyManager.stopAdvertising();

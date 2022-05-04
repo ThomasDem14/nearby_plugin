@@ -11,7 +11,6 @@ enum NearbyMessageType {
   onConnectionEnded,
 
   onPayloadReceived,
-  onPayloadTransferred,
 }
 
 NearbyMessageType? getNearbyMessageTypeFromString(String typeString) {
@@ -35,8 +34,6 @@ NearbyMessageType? getNearbyMessageTypeFromString(String typeString) {
     return NearbyMessageType.onConnectionEnded;
   } else if (typeString == "onPayloadReceived") {
     return NearbyMessageType.onPayloadReceived;
-  } else if (typeString == "onPayloadTransferred") {
-    return NearbyMessageType.onPayloadTransferred;
   } else {
     return null;
   }

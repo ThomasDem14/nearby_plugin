@@ -13,5 +13,4 @@ public enum MessageType {
     onConnectionEnded,
 
     onPayloadReceived,
-    onPayloadTransferred,
 }

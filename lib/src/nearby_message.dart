@@ -16,10 +16,8 @@ class NearbyMessage {
   /// Payload of the message.
   String? payload;
 
-  int? payloadStatus;
-
-  NearbyMessage(this.type, this.endpointId, this.endpoint, this.payloadId,
-      this.payload, this.payloadStatus);
+  NearbyMessage(
+      this.type, this.endpointId, this.endpoint, this.payloadId, this.payload);
 
   factory NearbyMessage.fromMap(Map<String, dynamic> from) {
     return NearbyMessage(
@@ -28,7 +26,6 @@ class NearbyMessage {
       from['endpoint'].toString(),
       from['payloadId'].toString(),
       from['payload'].toString(),
-      from['payloadStatus'],
     );
   }
 }

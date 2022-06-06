@@ -148,13 +148,11 @@ public class NearbyManager {
         }
     }
 
-    public void sendPayload(@NonNull String payload, @NonNull String destination) {
+    public void sendPayload(@NonNull byte[] payload, @NonNull String destination) {
         Log.i(TAG, "Send message to " + destination);
 
-        byte[] bytes = payload.getBytes();
-
-        if (bytes.length < ConnectionsClient.MAX_BYTES_DATA_SIZE) {
-            Payload bytePayload = Payload.fromBytes(payload.getBytes());
+        if (payload.length < ConnectionsClient.MAX_BYTES_DATA_SIZE) {
+            Payload bytePayload = Payload.fromBytes(payload);
             Nearby.getConnectionsClient(context).sendPayload(destination, bytePayload);
         }
         else {
@@ -167,7 +165,7 @@ public class NearbyManager {
 
                 // Write payload on write part
                 OutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(payloadPipe[1]);
-                InputStream is = new ByteArrayInputStream(payload.getBytes());
+                InputStream is = new ByteArrayInputStream(payload);
                 // By bunch of 32KB
                 int nRead;
                 byte[] data = new byte[32768];

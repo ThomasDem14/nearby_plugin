@@ -15,9 +15,9 @@ class TransferManager {
   static const EventChannel _eventCh = EventChannel(_eventName);
 
   late StreamController<NearbyMessage> _controller;
-  late NearbyStrategy strategy;
+  final NearbyStrategy _strategy;
 
-  TransferManager(this.strategy) {
+  TransferManager(this._strategy) {
     _controller = StreamController<NearbyMessage>.broadcast();
 
     _eventCh.receiveBroadcastStream().listen((event) {
@@ -35,7 +35,7 @@ class TransferManager {
     if (granted) {
       _methodCh.invokeMethod('startAdvertising', <String, dynamic>{
         'name': name,
-        'strategy': strategy.index,
+        'strategy': _strategy.index,
       });
     }
     return granted;
@@ -47,22 +47,28 @@ class TransferManager {
   }
 
   /// Send data to a destination.
-  void sendPayload(String data, String destination) {
+  /// Supports large data (more than 1MB).
+  void sendPayload(Object data, String destination) {
+    var encoded = const Utf8Encoder().convert(const JsonCodec().encode(data));
     _methodCh.invokeMethod('sendPayload', <String, dynamic>{
-      'data': data,
+      'data': encoded,
       'destination': destination,
     });
   }
 
   /// Send data to all connected devices.
-  void broadcast(String data) {
-    _methodCh.invokeMethod('broadcast', data);
+  /// Supports data smaller than 1MB.
+  void broadcast(Object data) {
+    var encoded = const JsonCodec().encode(data);
+    _methodCh.invokeMethod('broadcast', encoded);
   }
 
   /// Send data to all connected devices except the ones specified in the list.
-  void broadcastExcept(String data, List<String> endpoints) {
+  /// Supports data smaller than 1MB.
+  void broadcastExcept(Object data, List<String> endpoints) {
+    var encoded = const JsonCodec().encode(data);
     _methodCh.invokeMethod('broadcastExcept', <String, dynamic>{
-      'data': data,
+      'data': encoded,
       'endpoints': endpoints,
     });
   }
